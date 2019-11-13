@@ -1,0 +1,19 @@
+SELECT tbl.my_date, tbl.phone_type, tbl.source, 
+SUM(tbl.funnel_1) AS funnel_1, 
+SUM(tbl.funnel_2) AS funnel_2, 
+SUM(tbl.funnel_3) AS funnel_3, 
+SUM(tbl.funnel_4) AS funnel_4
+FROM(
+     SELECT r.my_date, r.phone_type, r.source, 
+     COUNT (DISTINCT r.user_id) AS funnel_1,
+     COUNT(DISTINCT CASE WHEN all_tree.event_type = 'sent_a_free_tree' THEN 1 END) AS funnel_2,
+     CASE WHEN (COUNT(CASE WHEN all_tree.event_type = 'sent_a_super_tree' THEN 1 END)) > 0 THEN 1 ELSE 0 END funnel_3,
+     CASE WHEN (COUNT(CASE WHEN all_tree.event_type = 'sent_a_super_tree' THEN 1 END)) > 1 THEN 1 ELSE 0 END funnel_4
+     FROM registration AS r FULL JOIN (
+                                       SELECT * FROM supertree
+                                       UNION ALL 
+                                       SELECT * FROM freetree) AS all_tree ON r.user_id = all_tree.user_id
+     GROUP BY r.my_date, r.phone_type, r.source, all_tree.user_id
+) AS tbl
+GROUP BY tbl.my_date, tbl.phone_type, tbl.source
+ORDER BY tbl.my_date, tbl.phone_type, tbl.source;
